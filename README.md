@@ -1,5 +1,24 @@
 # movie-recommender-app
 
+Movie-search-recommendations: 
+I brought in ideas from content based filtering and collaborative filtering to build an engine that gave movie suggestions to a particular user based on the estimated ratings that it had internally calculated for that user. 
+Github link to the inference server. (link)
+
+Content Based Filtering: I built a content based engine which took the following features as input to come up with movie based recommendations.
+Cast - Actors, Actresses names
+Crew - Director name (3x priority).
+Genre
+Keywords 
+to come up with predictions. I modified it to give higher precedence to movies with more votes and higher ratings. I exported the cosine similarity matrix numpy array that could be consumed by the online inference engine.
+
+Collaborative Filtering: I used the powerful Surprise Library to build a collaborative filter based on single value decomposition (SVD). The RMSE (Root Mean squared Error) obtained was less than 1 and the engine gave estimated ratings for a given user and movie. I trained the SVD model using 10,000 movie ratings provided by 5000 users from the TMDB dataset.
+
+
+Movie-Recommendations - End-to-End Architecture
+![](Movie_recommendation_architecture.png)
+
+
+
 This project contains source code and supporting files for a serverless application for classifying handwritten digits using a Machine Learning model in [scikit-learn](https://scikit-learn.org/). It includes the following files and folders:
 
 - app/app.py - Code for the application's Lambda function including the code for ML inferencing.
@@ -250,3 +269,18 @@ Value               arn:aws:lambda:us-east-1:943742432997:function:movie-recomme
 Successfully created/updated stack - movie-recommender-app in us-east-1
 
 ```
+
+
+## Verification:
+Use Postman Application to invoke a REST API (POST) request to the exposed API.
+![](Postman_API_call.png)
+
+
+STEP 4:
+Observe the CloudWatch logs to see the model load time latency and latency for SVD model loading time.
+![](AWS_Cloudwatch_logs_latency.png)
+
+
+Observations:
+It is found that there is cold start latency incurred with Lambda functions which results in the first few run-time inferences taking more than 50 seconds and that causes the API to timeout.
+However the subsequent API requests take less than 30 msec as the Lambda function is already running in an active EC2 instance.There are multiple ways to mitigate the runtime of Lambda functions in a cold state. Lambda supports provisioned concurrency to keep the functions initialized.
