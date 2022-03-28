@@ -3,8 +3,8 @@ Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
-    Timeout: 50
-    MemorySize: 5000
+    Timeout: 100
+    MemorySize: 10240
     Environment:
       Variables:
         SURPRISE_DATA_FOLDER: ./

@@ -8,13 +8,18 @@ import numpy as np
 import sys
 import traceback
 
+print("Loading loaded ml-25m.csv into pandas dataframe.")
 movie_db = pd.read_csv(os.path.join(pathlib.Path(__file__).parent.absolute(), 'ml-25m.csv'), header=0,
                        index_col=0,
                        squeeze=True)
+print("Successfully loaded ml-25m.csv into pandas dataframe.")
 
-# Pre-computed cosine similarity Numpy arrays.
-loaded = np.load(os.path.join(pathlib.Path(__file__).parent.absolute(), 'cosine_sim_25m.npz'))
-cosine_sim = loaded['arr_0']
+print("Loading loaded cosine_similarity_recommender_df.csv into pandas dataframe.")
+cosine_sim_df = pd.read_csv(os.path.join(pathlib.Path(__file__).parent.absolute(),
+                                         'cosine_similarity_recommender_df.csv'), header=0,
+                            index_col=0,
+                            squeeze=True)
+print("Successfully loaded cosine_similarity_recommender_df.csv into pandas dataframe.")
 
 
 def load(file_name):
@@ -22,7 +27,10 @@ def load(file_name):
     return dump_obj['algo']
 
 
+print("Loading svd pickle dump.")
+
 svd = load('svd')
+print("Successfully loaded svd pickle dump.")
 
 
 def lambda_handler(event, context):
@@ -56,10 +64,14 @@ def lambda_handler(event, context):
                   .format(idx, title))
 
             # STAGE 1: Filter out top 20 movies based on cosine similarity.
-            sim_scores = list(enumerate(cosine_sim[int(idx)]))
-            sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-            sim_scores = sim_scores[1:20]
-            movie_indices = [i[0] for i in sim_scores]
+            movie_list = cosine_sim_df.loc[cosine_sim_df['title'] == title, 'similar'].values[0]
+            if not len(movie_list):
+                print(f"Couldn't find a dataframe corresponding to {title}. Got {movie_list}.")
+                return {'statusCode': 200,
+                        'body': ' '}
+            movie_list = eval(movie_list)
+            print(f'movie_list={movie_list}')
+            movie_indices = [movie_db.index[movie_db['title'] == movie][0] for movie in movie_list]
             print(
                 f"Stage 1 complete - Found movie indices = {movie_indices} for top 50 titles that share the same cosine "
                 f"similarity with the passed in movie index.")
@@ -81,7 +93,7 @@ def lambda_handler(event, context):
         print("Stage 3 completed. Successfully applied SVD predict() on the list of 50 movie indices.")
 
         # STAGE 4: Pick top 10 movies from this list and send this back to the customer.
-        top_10_movies = movies.head(10)['title'].tolist()
+        top_10_movies = movies.head(20)['title'].tolist()
         print("Stage 4 completed. Successfully fetched top 10 movies from the list and returning this back to the "
               "customer.")
         print('TOP 10 movie recommendations={}'.format(top_10_movies))
