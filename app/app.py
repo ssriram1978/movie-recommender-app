@@ -8,6 +8,11 @@ import numpy as np
 import sys
 import traceback
 
+import base64
+from urllib.request import urlopen
+from imdb import Cinemagoer, helpers
+from flask import jsonify
+
 print("Loading loaded ml-25m.csv into pandas dataframe.")
 movie_db = pd.read_csv(os.path.join(pathlib.Path(__file__).parent.absolute(), 'ml-25m.csv'), header=0,
                        index_col=0,
@@ -93,7 +98,7 @@ def lambda_handler(event, context):
         print("Stage 3 completed. Successfully applied SVD predict() on the list of 50 movie indices.")
 
         # STAGE 4: Pick top 10 movies from this list and send this back to the customer.
-        top_10_movies = movies.head(20)['title'].tolist()
+        top_10_movies = movies.head(5)['title'].tolist()
         print("Stage 4 completed. Successfully fetched top 10 movies from the list and returning this back to the "
               "customer.")
         print('TOP 10 movie recommendations={}'.format(top_10_movies))
@@ -102,11 +107,18 @@ def lambda_handler(event, context):
         traceback.print_exception(*sys.exc_info())
         print(traceback.format_exc())
     finally:
+        output = {"top_10_movies": top_10_movies}
+        ia = Cinemagoer()
+        for index, movie in enumerate(top_10_movies):
+            search = ia.search_movie(movie)
+            movie_id = search[0].movieID
+            movie_obj = ia.get_movie(movie_id)
+            url = helpers.fullSizeCoverURL(movie_obj)
+            # print(f'for movie = {movie}, movie_id={movie_id}, url = {url}')
+            compressed_url = helpers.resizeImage(url, width=200, height=400)
+            output['poster-' + str(index)] = 'data:image/jpg;base64,' + base64.b64encode(
+                urlopen(compressed_url).read()).decode('utf-8')
         return {
             'statusCode': 200,
-            'body': json.dumps(
-                {
-                    "top_10_movies": top_10_movies,
-                }
-            )
+            'body': json.dumps(output)
         }

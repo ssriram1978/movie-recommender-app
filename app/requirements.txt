@@ -2,3 +2,5 @@ pillow
 pandas
 numpy
 scikit-surprise
+cinemagoer
+flask
