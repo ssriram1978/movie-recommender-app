@@ -98,7 +98,7 @@ def lambda_handler(event, context):
         print("Stage 3 completed. Successfully applied SVD predict() on the list of 50 movie indices.")
 
         # STAGE 4: Pick top 10 movies from this list and send this back to the customer.
-        top_10_movies = movies.head(5)['title'].tolist()
+        top_10_movies = movies.head(10)['title'].tolist()
         print("Stage 4 completed. Successfully fetched top 10 movies from the list and returning this back to the "
               "customer.")
         print('TOP 10 movie recommendations={}'.format(top_10_movies))
@@ -116,8 +116,9 @@ def lambda_handler(event, context):
             url = helpers.fullSizeCoverURL(movie_obj)
             # print(f'for movie = {movie}, movie_id={movie_id}, url = {url}')
             compressed_url = helpers.resizeImage(url, width=200, height=400)
-            output['poster-' + str(index)] = 'data:image/jpg;base64,' + base64.b64encode(
-                urlopen(compressed_url).read()).decode('utf-8')
+            output[str(index) + '_url'] = compressed_url
+            # output['poster-' + str(index)] = 'data:image/jpg;base64,' + base64.b64encode(
+            #    urlopen(compressed_url).read()).decode('utf-8')
         return {
             'statusCode': 200,
             'body': json.dumps(output)
